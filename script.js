@@ -1,5 +1,7 @@
 class RollCallSystem {
     constructor() {
+        console.log('🚀 RollCallSystem 构造函数被调用');
+
         this.students = [];
         this.currentStudent = null;
         this.db = null;
@@ -11,6 +13,7 @@ class RollCallSystem {
         this.isAutoRolling = false;
         this.autoRollTimer = null;
 
+        console.log('📊 开始初始化系统组件...');
         this.initializeDB();
         this.setupEventListeners();
         this.loadStudentsFromStorage();
@@ -19,6 +22,8 @@ class RollCallSystem {
 
         // 初始化按钮状态
         this.initializeButtonStates();
+
+        console.log('✅ RollCallSystem 初始化完成');
     }
 
     // 初始化IndexedDB
@@ -55,8 +60,19 @@ class RollCallSystem {
 
     // 设置事件监听器
     setupEventListeners() {
+        console.log('🔧 开始设置事件监听器...');
+
         // CSV文件导入
-        document.getElementById('csvFile').addEventListener('change', (e) => this.importCSV(e));
+        const csvFileInput = document.getElementById('csvFile');
+        if (csvFileInput) {
+            csvFileInput.addEventListener('change', (e) => {
+                console.log('📁 CSV文件选择事件触发');
+                this.importCSV(e);
+            });
+            console.log('✅ CSV文件导入事件监听器已设置');
+        } else {
+            console.log('❌ 未找到csvFile元素');
+        }
 
         // 点名控制按钮
         document.getElementById('startRoll').addEventListener('click', () => this.startRoll());
@@ -101,39 +117,98 @@ class RollCallSystem {
 
     // 导入CSV文件
     importCSV(event) {
+        console.log('🔄 CSV导入功能被调用');
+        console.log('📁 选择的事件对象:', event);
+        console.log('📁 文件列表:', event.target.files);
+
         const file = event.target.files[0];
-        if (!file) return;
+        if (!file) {
+            console.log('❌ 没有选择文件');
+            this.showNotification('请选择CSV文件', 'warning');
+            return;
+        }
+
+        console.log('📄 选择的文件:', file.name);
+        console.log('📄 文件大小:', file.size, 'bytes');
+        console.log('📄 文件类型:', file.type);
+
+        // 验证文件类型
+        if (!file.name.toLowerCase().endsWith('.csv')) {
+            console.log('❌ 文件类型不是CSV');
+            this.showNotification('请选择CSV格式文件', 'error');
+            return;
+        }
 
         const reader = new FileReader();
+
         reader.onload = (e) => {
-            const csv = e.target.result;
-            const lines = csv.split('\n').filter(line => line.trim());
+            try {
+                console.log('✅ 文件读取成功');
+                console.log('📊 原始文件内容长度:', e.target.result.length);
 
-            this.students = [];
-            lines.forEach((line, index) => {
-                const name = line.trim().replace(/['"]/g, '');
-                if (name) {
-                    this.students.push({
-                        id: Date.now() + index,
-                        name: name,
-                        rollCount: 0,
-                        presentCount: 0,
-                        lateCount: 0,
-                        absentCount: 0,
-                        lastRollTime: null
-                    });
+                const csv = e.target.result;
+
+                // 显示文件内容的前100个字符用于调试
+                console.log('📝 文件内容预览:', csv.substring(0, 100) + '...');
+
+                const lines = csv.split('\n').filter(line => line.trim());
+                console.log('📈 分割后的行数:', lines.length);
+
+                if (lines.length === 0) {
+                    console.log('❌ 文件内容为空');
+                    this.showNotification('CSV文件为空，请检查文件内容', 'error');
+                    return;
                 }
-            });
 
-            this.saveStudentsToStorage();
-            this.saveStudentsToDB();
-            this.updateStudentCount();
+                this.students = [];
+                lines.forEach((line, index) => {
+                    const name = line.trim().replace(/['"]/g, '');
+                    if (name) {
+                        this.students.push({
+                            id: Date.now() + index,
+                            name: name,
+                            rollCount: 0,
+                            presentCount: 0,
+                            lateCount: 0,
+                            absentCount: 0,
+                            lastRollTime: null
+                        });
+                    }
+                });
 
-            // 更新按钮状态
-            document.getElementById('startRoll').disabled = false;
-            this.showNotification(`成功导入 ${this.students.length} 名学生`, 'success');
+                console.log('✅ 成功解析学生数量:', this.students.length);
+                console.log('👥 学生列表:', this.students.map(s => s.name));
+
+                if (this.students.length === 0) {
+                    console.log('❌ 没有有效学生数据');
+                    this.showNotification('CSV文件中没有找到有效的学生姓名', 'error');
+                    return;
+                }
+
+                this.saveStudentsToStorage();
+                this.saveStudentsToDB();
+                this.updateStudentCount();
+
+                // 更新按钮状态
+                document.getElementById('startRoll').disabled = false;
+                this.updateNavigationButtons();
+
+                this.showNotification(`✅ 成功导入 ${this.students.length} 名学生`, 'success');
+                console.log('🎉 CSV导入完成');
+
+            } catch (error) {
+                console.error('❌ CSV导入过程中出现错误:', error);
+                this.showNotification('CSV文件解析失败，请检查文件格式', 'error');
+            }
         };
+
+        reader.onerror = (error) => {
+            console.error('❌ 文件读取失败:', error);
+            this.showNotification('文件读取失败，请重试', 'error');
+        };
+
         reader.readAsText(file);
+        console.log('📖 开始读取文件...');
     }
 
     // 保存学生到localStorage
