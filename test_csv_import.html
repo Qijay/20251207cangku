@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV导入测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1976d2;
+        }
+        #result {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            white-space: pre-wrap;
+        }
+        .student-list {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>CSV导入功能测试</h1>
+
+        <div class="test-section">
+            <h2>1. CSV文件导入测试</h2>
+            <p>请选择一个CSV文件进行测试：</p>
+            <input type="file" id="csvFile" accept=".csv">
+            <button onclick="testImport()">导入CSV</button>
+            <div id="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>2. 预定义CSV测试</h2>
+            <p>使用内置的测试数据进行测试：</p>
+            <button onclick="testWithSampleData()">测试样例数据</button>
+            <div id="studentList" class="student-list"></div>
+        </div>
+    </div>
+
+    <script>
+        class CSVTestSystem {
+            constructor() {
+                this.students = [];
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                const csvFileInput = document.getElementById('csvFile');
+                if (csvFileInput) {
+                    csvFileInput.addEventListener('change', (e) => this.importCSV(e));
+                }
+            }
+
+            importCSV(event) {
+                const file = event.target.files[0];
+                if (!file) {
+                    this.displayResult('请选择CSV文件', 'error');
+                    return;
+                }
+
+                if (!file.name.toLowerCase().endsWith('.csv')) {
+                    this.displayResult('请选择CSV格式文件', 'error');
+                    return;
+                }
+
+                const reader = new FileReader();
+
+                reader.onload = (e) => {
+                    try {
+                        const csv = e.target.result;
+                        const lines = csv.split('\n').filter(line => line.trim());
+
+                        if (lines.length === 0) {
+                            this.displayResult('CSV文件为空', 'error');
+                            return;
+                        }
+
+                        this.students = [];
+                        let validCount = 0;
+
+                        lines.forEach((line, index) => {
+                            const name = line.trim().replace(/['"]/g, '');
+                            if (name) {
+                                this.students.push({
+                                    id: Date.now() + index,
+                                    name: name,
+                                    rollCount: 0,
+                                    presentCount: 0,
+                                    lateCount: 0,
+                                    absentCount: 0,
+                                    lastRollTime: null
+                                });
+                                validCount++;
+                            }
+                        });
+
+                        if (this.students.length === 0) {
+                            this.displayResult('CSV文件中没有找到有效的学生姓名', 'error');
+                            return;
+                        }
+
+                        this.displayResult(`✅ 成功导入 ${validCount} 名学生\n\n学生列表：\n${this.students.map(s => `- ${s.name}`).join('\n')}`, 'success');
+                        this.displayStudentList();
+
+                    } catch (error) {
+                        this.displayResult(`❌ CSV导入错误: ${error.message}`, 'error');
+                    }
+                };
+
+                reader.onerror = () => {
+                    this.displayResult('文件读取失败，请重试', 'error');
+                };
+
+                reader.readAsText(file);
+            }
+
+            testWithSampleData() {
+                const sampleData = '张三\n李四\n王五\n赵六\n陈七\n刘八\n周九\n吴十';
+
+                try {
+                    const lines = sampleData.split('\n').filter(line => line.trim());
+                    this.students = [];
+                    let validCount = 0;
+
+                    lines.forEach((line, index) => {
+                        const name = line.trim();
+                        if (name) {
+                            this.students.push({
+                                id: Date.now() + index,
+                                name: name,
+                                rollCount: 0,
+                                presentCount: 0,
+                                lateCount: 0,
+                                absentCount: 0,
+                                lastRollTime: null
+                            });
+                            validCount++;
+                        }
+                    });
+
+                    this.displayResult(`✅ 成功导入 ${validCount} 名学生`, 'success');
+                    this.displayStudentList();
+
+                } catch (error) {
+                    this.displayResult(`❌ 测试数据导入错误: ${error.message}`, 'error');
+                }
+            }
+
+            displayResult(message, type = 'info') {
+                const resultDiv = document.getElementById('result');
+                resultDiv.textContent = message;
+                resultDiv.style.backgroundColor = type === 'error' ? '#ffebee' :
+                                                  type === 'success' ? '#e8f5e8' : '#f0f7ff';
+                resultDiv.style.color = type === 'error' ? '#c62828' :
+                                        type === 'success' ? '#2e7d32' : '#1565c0';
+            }
+
+            displayStudentList() {
+                const listDiv = document.getElementById('studentList');
+                if (this.students.length > 0) {
+                    listDiv.innerHTML = `
+                        <h3>已导入的学生列表 (${this.students.length}人)</h3>
+                        <ul>${this.students.map(s => `<li>${s.name} (ID: ${s.id})</li>`).join('')}</ul>
+                    `;
+                } else {
+                    listDiv.innerHTML = '<p>暂无学生数据</p>';
+                }
+            }
+        }
+
+        // 初始化测试系统
+        let testSystem;
+        document.addEventListener('DOMContentLoaded', () => {
+            testSystem = new CSVTestSystem();
+        });
+
+        function testImport() {
+            const fileInput = document.getElementById('csvFile');
+            if (fileInput.files.length === 0) {
+                alert('请先选择一个CSV文件');
+                return;
+            }
+            // 导入功能已由事件监听器自动处理
+        }
+
+        function testWithSampleData() {
+            testSystem.testWithSampleData();
+        }
+    </script>
+</body>
+</html>

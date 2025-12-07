@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV导入测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-area {
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #result {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            min-height: 100px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>CSV导入功能测试</h1>
+
+    <div class="test-area">
+        <h3>文件选择测试</h3>
+        <input type="file" id="csvFile" accept=".csv">
+        <button onclick="testCSVImport()">测试导入</button>
+        <button onclick="clearResult()">清空结果</button>
+    </div>
+
+    <div class="test-area">
+        <h3>测试结果</h3>
+        <div id="result">等待测试...</div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const result = document.getElementById('result');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type;
+            result.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            result.scrollTop = result.scrollHeight;
+        }
+
+        function clearResult() {
+            document.getElementById('result').innerHTML = '等待测试...\n';
+        }
+
+        function testCSVImport() {
+            const fileInput = document.getElementById('csvFile');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                log('❌ 请先选择CSV文件', 'error');
+                return;
+            }
+
+            log(`📁 开始测试文件: ${file.name}`, 'info');
+            log(`📊 文件大小: ${file.size} bytes`, 'info');
+
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                try {
+                    const content = e.target.result;
+                    log(`✅ 文件读取成功，内容长度: ${content.length}`, 'success');
+
+                    // 测试CSV解析
+                    const lines = content.split('\n');
+                    const validLines = lines.filter(line => line.trim().length > 0);
+
+                    log(`📈 总行数: ${lines.length}`, 'info');
+                    log(`👥 有效行数: ${validLines.length}`, 'info');
+
+                    if (validLines.length > 0) {
+                        log('📝 解析的学生姓名:', 'info');
+                        validLines.forEach((line, index) => {
+                            const name = line.trim().replace(/['"]/g, '');
+                            if (name) {
+                                log(`  ${index + 1}. ${name}`, 'success');
+                            }
+                        });
+
+                        // 测试localStorage保存
+                        const students = validLines.map((line, index) => ({
+                            id: Date.now() + index,
+                            name: line.trim().replace(/['"]/g, ''),
+                            rollCount: 0
+                        }));
+
+                        localStorage.setItem('testStudents', JSON.stringify(students));
+
+                        // 验证保存结果
+                        const saved = JSON.parse(localStorage.getItem('testStudents'));
+                        log(`💾 已保存到localStorage，学生数量: ${saved.length}`, 'success');
+
+                        log('🎉 CSV导入测试完成！', 'success');
+                    } else {
+                        log('⚠️ 没有找到有效的学生数据', 'error');
+                    }
+
+                } catch (error) {
+                    log(`❌ 处理过程中出错: ${error.message}`, 'error');
+                    console.error('CSV测试错误:', error);
+                }
+            };
+
+            reader.onerror = function(e) {
+                log(`❌ 文件读取失败: ${e}`, 'error');
+            };
+
+            reader.readAsText(file);
+        }
+
+        // 页面加载时的初始化
+        window.addEventListener('load', function() {
+            log('🚀 页面加载完成，CSV导入测试工具已准备就绪', 'info');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV导入调试测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        .file-input {
+            margin: 10px 0;
+        }
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .upload-btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #4CAF50;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 10px 5px;
+            text-decoration: none;
+        }
+        .upload-btn:hover {
+            background: #45a049;
+        }
+        .result {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .students-list {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .student-item {
+            display: inline-block;
+            margin: 5px;
+            padding: 5px 10px;
+            background: #007bff;
+            color: white;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .console-log {
+            background: #1e1e1e;
+            color: #fff;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 CSV导入功能调试测试</h1>
+
+        <div class="test-section">
+            <h2>📁 基础文件选择测试</h2>
+            <div class="file-input">
+                <input type="file" id="csvFile" accept=".csv">
+            </div>
+            <a href="#" class="upload-btn" onclick="document.getElementById('csvFile').click()">📤 选择CSV文件</a>
+
+            <div id="result" class="result info">
+                等待选择CSV文件...
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>👥 导入结果</h2>
+            <div id="studentsContainer" class="students-list">
+                <p>尚未导入学生数据</p>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔍 控制台日志</h2>
+            <div id="consoleLog" class="console-log">
+                等待日志输出...
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🧪 测试按钮</h2>
+            <button onclick="testManualCSV()" class="upload-btn">测试手动CSV解析</button>
+            <button onclick="testLocalStorage()" class="upload-btn">测试localStorage</button>
+            <button onclick="clearStorage()" class="upload-btn">清空存储</button>
+        </div>
+    </div>
+
+    <script src="fixed_csv_import.js"></script>
+    <script>
+        // 覆盖console.log以在页面显示
+        const originalLog = console.log;
+        const originalError = console.error;
+
+        function addToConsole(message) {
+            const logElement = document.getElementById('consoleLog');
+            if (logElement) {
+                logElement.textContent += new Date().toLocaleTimeString() + ': ' + message + '\n';
+                logElement.scrollTop = logElement.scrollHeight;
+            }
+        }
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToConsole(args.join(' '));
+        };
+
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToConsole('ERROR: ' + args.join(' '));
+        };
+
+        // 页面加载完成后的初始化
+        window.addEventListener('load', function() {
+            console.log('🚀 页面加载完成，开始初始化');
+
+            // 检查csvImporter是否正确加载
+            setTimeout(() => {
+                if (window.csvImporter) {
+                    console.log('✅ csvImporter已加载');
+
+                    // 重写importCSV方法以便测试
+                    const originalImporter = window.csvImporter.handleFileSelect;
+                    window.csvImporter.handleFileSelect = function(event) {
+                        console.log('🔄 重写的handleFileSelect被调用');
+                        originalImporter.call(this, event);
+
+                        // 显示结果
+                        setTimeout(() => {
+                            const students = window.csvImporter.getStudents();
+                            if (students.length > 0) {
+                                const resultDiv = document.getElementById('result');
+                                resultDiv.className = 'result success';
+                                resultDiv.innerHTML = `✅ 成功导入 ${students.length} 名学生`;
+
+                                const container = document.getElementById('studentsContainer');
+                                container.innerHTML = '<strong>导入的学生名单：</strong><br>';
+
+                                students.forEach((student, index) => {
+                                    const studentDiv = document.createElement('span');
+                                    studentDiv.className = 'student-item';
+                                    studentDiv.textContent = `${index + 1}. ${student.name}`;
+                                    container.appendChild(studentDiv);
+                                });
+                            }
+                        }, 500);
+                    };
+
+                    console.log('🔧 CSV导入功能已准备好');
+                } else {
+                    console.log('❌ csvImporter未加载');
+                    document.getElementById('result').className = 'result error';
+                    document.getElementById('result').textContent = '❌ CSV导入器加载失败';
+                }
+            }, 1000);
+        });
+
+        // 测试函数
+        function testManualCSV() {
+            console.log('🧪 开始手动CSV解析测试');
+
+            const csvData = `张三
+李四
+王五
+赵六
+陈七`;
+
+            try {
+                const lines = csvData.split('\n');
+                const validLines = lines.filter(line => line.trim());
+                console.log('📊 测试数据行数:', validLines.length);
+
+                if (validLines.length > 0) {
+                    document.getElementById('studentsContainer').innerHTML = '<strong>测试解析结果：</strong><br>' +
+                        validLines.map((line, index) =>
+                            `<span class="student-item">${index + 1}. ${line.trim()}</span>`
+                        ).join('');
+
+                    document.getElementById('result').className = 'result success';
+                    document.getElementById('result').textContent = '✅ 手动CSV解析测试成功';
+                }
+            } catch (error) {
+                console.error('❌ 手动测试失败:', error);
+                document.getElementById('result').className = 'result error';
+                document.getElementById('result').textContent = '❌ 手动测试失败: ' + error.message;
+            }
+        }
+
+        function testLocalStorage() {
+            console.log('💾 测试localStorage');
+
+            try {
+                const testData = [
+                    { id: 1, name: '测试学生1', rollCount: 0 },
+                    { id: 2, name: '测试学生2', rollCount: 0 }
+                ];
+
+                localStorage.setItem('testStudents', JSON.stringify(testData));
+
+                const saved = JSON.parse(localStorage.getItem('testStudents'));
+                console.log('✅ localStorage测试数据:', saved);
+
+                document.getElementById('result').className = 'result success';
+                document.getElementById('result').textContent = '✅ localStorage测试成功';
+            } catch (error) {
+                console.error('❌ localStorage测试失败:', error);
+                document.getElementById('result').className = 'result error';
+                document.getElementById('result').textContent = '❌ localStorage测试失败';
+            }
+        }
+
+        function clearStorage() {
+            console.log('🗑️ 清空localStorage');
+
+            try {
+                localStorage.clear();
+                console.log('✅ localStorage已清空');
+
+                document.getElementById('result').className = 'result info';
+                document.getElementById('result').textContent = '✅ 存储已清空';
+                document.getElementById('studentsContainer').innerHTML = '<p>存储已清空</p>';
+            } catch (error) {
+                console.error('❌ 清空失败:', error);
+                document.getElementById('result').className = 'result error';
+                document.getElementById('result').textContent = '❌ 清空失败';
+            }
+        }
+    </script>
+</body>
+</html>

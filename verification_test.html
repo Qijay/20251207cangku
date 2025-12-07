@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>点名神器功能验证测试</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .test-panel {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            margin: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .test-results {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .test-button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="earth-container">
+            <div class="earth">
+                <div class="earth-surface">
+                    <div class="continent"></div>
+                    <div class="continent"></div>
+                    <div class="continent"></div>
+                </div>
+                <div class="clouds"></div>
+            </div>
+        </div>
+
+        <div class="result-display" id="resultDisplay">
+            <div class="name-plate" id="namePlate">
+                <div class="name-text" id="selectedName">功能验证测试模式</div>
+                <div class="status-badge" id="statusBadge"></div>
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <div class="section">
+                <h3>🧪 功能验证测试</h3>
+                <div class="test-panel">
+                    <h4>测试控制</h4>
+                    <button class="test-button" onclick="runAllTests()">🚀 运行所有测试</button>
+                    <button class="test-button" onclick="testCSVOnly()">📁 仅测试CSV导入</button>
+                    <button class="test-button" onclick="clearResults()">🗑️ 清空结果</button>
+
+                    <div class="test-results" id="testResults">
+                        等待测试运行...
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>📋 CSV文件测试</h3>
+                <div class="file-upload">
+                    <input type="file" id="csvFile" accept=".csv" />
+                    <label for="csvFile" class="upload-btn">
+                        📤 导入CSV名单测试
+                    </label>
+                </div>
+                <div class="student-count">
+                    当前人数：<span id="studentCount">0</span>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>🎯 点名控制测试</h3>
+                <div class="roll-controls">
+                    <button id="startRoll" class="btn btn-primary" disabled>
+                        🌍 开始点名
+                    </button>
+                    <button id="markPresent" class="btn btn-success" disabled>
+                        ✅ 签到
+                    </button>
+                    <button id="markLate" class="btn btn-warning" disabled>
+                        ⏰ 迟到
+                    </button>
+                    <button id="markAbsent" class="btn btn-danger" disabled>
+                        ❌ 缺席
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        let testOutput = '';
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
+            testOutput += `[${timestamp}] ${icon} ${message}\n`;
+            updateTestResults();
+        }
+
+        function updateTestResults() {
+            document.getElementById('testResults').textContent = testOutput;
+            document.getElementById('testResults').scrollTop = document.getElementById('testResults').scrollHeight;
+        }
+
+        function clearResults() {
+            testOutput = '';
+            updateTestResults();
+        }
+
+        function testSystemInit() {
+            log('🔍 测试系统初始化...');
+
+            setTimeout(() => {
+                if (window.rollCallSystem) {
+                    log('RollCallSystem已正确初始化', 'success');
+                    log(`当前学生数量: ${window.rollCallSystem.students.length}`, 'info');
+                } else {
+                    log('RollCallSystem未初始化', 'error');
+                }
+            }, 1000);
+        }
+
+        function testCSVOnly() {
+            log('🔍 开始CSV导入专项测试...');
+
+            // 测试基本的FileReader功能
+            const testCSV = `测试学生1
+测试学生2
+测试学生3`;
+
+            try {
+                // 创建模拟文件
+                const blob = new Blob([testCSV], { type: 'text/csv' });
+                const file = new File([blob], 'test.csv', { type: 'text/csv' });
+
+                // 测试文件读取
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const content = e.target.result;
+                    const lines = content.split('\n').filter(line => line.trim());
+
+                    log(`CSV解析成功，读取到 ${lines.length} 个学生姓名`, 'success');
+                    lines.forEach((line, index) => {
+                        log(`  ${index + 1}. ${line.trim()}`, 'info');
+                    });
+
+                    // 测试localStorage保存
+                    try {
+                        const students = lines.map((line, index) => ({
+                            id: Date.now() + index,
+                            name: line.trim(),
+                            rollCount: 0
+                        }));
+
+                        localStorage.setItem('testStudents', JSON.stringify(students));
+                        const saved = JSON.parse(localStorage.getItem('testStudents'));
+
+                        if (saved && saved.length === lines.length) {
+                            log('localStorage保存和读取测试成功', 'success');
+                            localStorage.removeItem('testStudents');
+                        } else {
+                            log('localStorage测试失败', 'error');
+                        }
+                    } catch (e) {
+                        log(`localStorage测试出错: ${e.message}`, 'error');
+                    }
+                };
+
+                reader.onerror = function() {
+                    log('FileReader读取失败', 'error');
+                };
+
+                reader.readAsText(file);
+
+            } catch (error) {
+                log(`CSV测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        function runAllTests() {
+            clearResults();
+            log('🚀 开始运行完整功能测试套件...');
+
+            // 测试1: 系统初始化
+            testSystemInit();
+
+            // 测试2: DOM元素检查
+            setTimeout(() => {
+                log('🔍 测试DOM元素...');
+                const requiredElements = ['csvFile', 'startRoll', 'studentCount', 'selectedName'];
+                let allFound = true;
+
+                requiredElements.forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        log(`找到元素: ${id}`, 'success');
+                    } else {
+                        log(`未找到元素: ${id}`, 'error');
+                        allFound = false;
+                    }
+                });
+
+                if (allFound) {
+                    log('所有必要DOM元素已找到', 'success');
+                }
+            }, 1500);
+
+            // 测试3: CSV导入功能
+            setTimeout(() => {
+                testCSVOnly();
+            }, 2500);
+
+            // 测试4: 按钮状态测试
+            setTimeout(() => {
+                log('🔍 测试按钮状态...');
+                const startButton = document.getElementById('startRoll');
+                const csvFile = document.getElementById('csvFile');
+
+                if (startButton && csvFile) {
+                    log(`开始点名按钮状态: ${startButton.disabled ? '禁用' : '启用'}`, 'info');
+                    log('按钮状态检查完成', 'success');
+                } else {
+                    log('按钮元素未找到', 'error');
+                }
+            }, 4000);
+
+            // 测试完成
+            setTimeout(() => {
+                log('🎉 功能测试套件执行完成！', 'success');
+                log('请检查控制台输出以获取详细信息', 'info');
+            }, 5500);
+        }
+
+        // 页面加载完成后的初始化
+        window.addEventListener('load', function() {
+            log('🎯 点名神器功能验证测试页面已加载', 'success');
+            log('点击"运行所有测试"按钮开始测试', 'info');
+        });
+    </script>
+</body>
+</html>

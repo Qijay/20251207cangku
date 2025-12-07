@@ -1,39 +1,22 @@
 class RollCallSystem {
     constructor() {
-        console.log('🚀 RollCallSystem 构造函数被调用');
-        this.updateDebugInfo('正在初始化系统...');
-
+        // 初始化属性
         this.students = [];
         this.currentStudent = null;
         this.db = null;
         this.isRolling = false;
-
-        // 点名历史记录
         this.rollHistory = [];
         this.currentHistoryIndex = -1;
         this.isAutoRolling = false;
         this.autoRollTimer = null;
 
-        console.log('📊 开始初始化系统组件...');
+        // 初始化系统
         this.initializeDB();
         this.setupEventListeners();
         this.loadStudentsFromStorage();
         this.updateStatistics();
         this.loadRecentRecords();
-
-        // 初始化按钮状态
         this.initializeButtonStates();
-
-        console.log('✅ RollCallSystem 初始化完成');
-        this.updateDebugInfo('系统初始化完成，准备就绪');
-    }
-
-    // 更新调试信息
-    updateDebugInfo(message) {
-        const debugElement = document.getElementById('debugInfo');
-        if (debugElement) {
-            debugElement.innerHTML = message + '<br><small>' + new Date().toLocaleTimeString() + '</small>';
-        }
     }
 
     // 初始化IndexedDB
@@ -70,25 +53,13 @@ class RollCallSystem {
 
     // 设置事件监听器
     setupEventListeners() {
-        console.log('🔧 开始设置事件监听器...');
-        this.updateDebugInfo('正在设置事件监听器...');
-
-        // CSV文件导入
+        // CSV文件导入 - 使用箭头函数保持this上下文
         const csvFileInput = document.getElementById('csvFile');
         if (csvFileInput) {
-            csvFileInput.addEventListener('change', (e) => {
-                console.log('📁 CSV文件选择事件触发');
-                this.updateDebugInfo('检测到文件选择事件');
-                this.importCSV(e);
-            });
-            console.log('✅ CSV文件导入事件监听器已设置');
-            this.updateDebugInfo('CSV导入监听器已设置');
-        } else {
-            console.log('❌ 未找到csvFile元素');
-            this.updateDebugInfo('❌ 错误：未找到csvFile元素');
+            csvFileInput.addEventListener('change', (e) => this.importCSV(e));
         }
 
-        // 点名控制按钮
+        // 点名控制按钮 - 使用箭头函数保持this上下文
         document.getElementById('startRoll').addEventListener('click', () => this.startRoll());
         document.getElementById('markPresent').addEventListener('click', () => this.markAttendance('present'));
         document.getElementById('markLate').addEventListener('click', () => this.markAttendance('late'));
@@ -131,27 +102,14 @@ class RollCallSystem {
 
     // 导入CSV文件
     importCSV(event) {
-        console.log('🔄 CSV导入功能被调用');
-        this.updateDebugInfo('开始CSV导入处理...');
-
-        console.log('📁 选择的事件对象:', event);
-        console.log('📁 文件列表:', event.target.files);
-        this.updateDebugInfo(`检查到 ${event.target.files.length} 个文件`);
-
         const file = event.target.files[0];
         if (!file) {
-            console.log('❌ 没有选择文件');
             this.showNotification('请选择CSV文件', 'warning');
             return;
         }
 
-        console.log('📄 选择的文件:', file.name);
-        console.log('📄 文件大小:', file.size, 'bytes');
-        console.log('📄 文件类型:', file.type);
-
         // 验证文件类型
         if (!file.name.toLowerCase().endsWith('.csv')) {
-            console.log('❌ 文件类型不是CSV');
             this.showNotification('请选择CSV格式文件', 'error');
             return;
         }
@@ -160,24 +118,17 @@ class RollCallSystem {
 
         reader.onload = (e) => {
             try {
-                console.log('✅ 文件读取成功');
-                console.log('📊 原始文件内容长度:', e.target.result.length);
-
                 const csv = e.target.result;
-
-                // 显示文件内容的前100个字符用于调试
-                console.log('📝 文件内容预览:', csv.substring(0, 100) + '...');
-
                 const lines = csv.split('\n').filter(line => line.trim());
-                console.log('📈 分割后的行数:', lines.length);
 
                 if (lines.length === 0) {
-                    console.log('❌ 文件内容为空');
                     this.showNotification('CSV文件为空，请检查文件内容', 'error');
                     return;
                 }
 
                 this.students = [];
+                let validCount = 0;
+
                 lines.forEach((line, index) => {
                     const name = line.trim().replace(/['"]/g, '');
                     if (name) {
@@ -190,14 +141,11 @@ class RollCallSystem {
                             absentCount: 0,
                             lastRollTime: null
                         });
+                        validCount++;
                     }
                 });
 
-                console.log('✅ 成功解析学生数量:', this.students.length);
-                console.log('👥 学生列表:', this.students.map(s => s.name));
-
                 if (this.students.length === 0) {
-                    console.log('❌ 没有有效学生数据');
                     this.showNotification('CSV文件中没有找到有效的学生姓名', 'error');
                     return;
                 }
@@ -210,23 +158,19 @@ class RollCallSystem {
                 document.getElementById('startRoll').disabled = false;
                 this.updateNavigationButtons();
 
-                this.showNotification(`✅ 成功导入 ${this.students.length} 名学生`, 'success');
-                console.log('🎉 CSV导入完成');
-                this.updateDebugInfo(`✅ 成功导入 ${this.students.length} 名学生`);
+                this.showNotification(`成功导入 ${validCount} 名学生`, 'success');
 
             } catch (error) {
-                console.error('❌ CSV导入过程中出现错误:', error);
+                console.error('CSV导入错误:', error);
                 this.showNotification('CSV文件解析失败，请检查文件格式', 'error');
             }
         };
 
-        reader.onerror = (error) => {
-            console.error('❌ 文件读取失败:', error);
+        reader.onerror = () => {
             this.showNotification('文件读取失败，请重试', 'error');
         };
 
         reader.readAsText(file);
-        console.log('📖 开始读取文件...');
     }
 
     // 保存学生到localStorage
@@ -682,10 +626,8 @@ class RollCallSystem {
             }, 300);
         }, 3000);
     }
-}
 
-// 初始化系统
-  // 添加到历史记录
+    // 添加到历史记录
     addToHistory(student) {
         // 如果不是当前显示的学生，则添加到历史记录
         if (!this.currentHistoryIndex || this.rollHistory[this.currentHistoryIndex]?.id !== student.id) {
@@ -802,6 +744,8 @@ class RollCallSystem {
         }
     }
 }
+
+// 初始化系统
 
 document.addEventListener('DOMContentLoaded', () => {
     new RollCallSystem();
