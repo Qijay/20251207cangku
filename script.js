@@ -1,6 +1,7 @@
 class RollCallSystem {
     constructor() {
         console.log('🚀 RollCallSystem 构造函数被调用');
+        this.updateDebugInfo('正在初始化系统...');
 
         this.students = [];
         this.currentStudent = null;
@@ -24,6 +25,15 @@ class RollCallSystem {
         this.initializeButtonStates();
 
         console.log('✅ RollCallSystem 初始化完成');
+        this.updateDebugInfo('系统初始化完成，准备就绪');
+    }
+
+    // 更新调试信息
+    updateDebugInfo(message) {
+        const debugElement = document.getElementById('debugInfo');
+        if (debugElement) {
+            debugElement.innerHTML = message + '<br><small>' + new Date().toLocaleTimeString() + '</small>';
+        }
     }
 
     // 初始化IndexedDB
@@ -61,17 +71,21 @@ class RollCallSystem {
     // 设置事件监听器
     setupEventListeners() {
         console.log('🔧 开始设置事件监听器...');
+        this.updateDebugInfo('正在设置事件监听器...');
 
         // CSV文件导入
         const csvFileInput = document.getElementById('csvFile');
         if (csvFileInput) {
             csvFileInput.addEventListener('change', (e) => {
                 console.log('📁 CSV文件选择事件触发');
+                this.updateDebugInfo('检测到文件选择事件');
                 this.importCSV(e);
             });
             console.log('✅ CSV文件导入事件监听器已设置');
+            this.updateDebugInfo('CSV导入监听器已设置');
         } else {
             console.log('❌ 未找到csvFile元素');
+            this.updateDebugInfo('❌ 错误：未找到csvFile元素');
         }
 
         // 点名控制按钮
@@ -118,8 +132,11 @@ class RollCallSystem {
     // 导入CSV文件
     importCSV(event) {
         console.log('🔄 CSV导入功能被调用');
+        this.updateDebugInfo('开始CSV导入处理...');
+
         console.log('📁 选择的事件对象:', event);
         console.log('📁 文件列表:', event.target.files);
+        this.updateDebugInfo(`检查到 ${event.target.files.length} 个文件`);
 
         const file = event.target.files[0];
         if (!file) {
@@ -195,6 +212,7 @@ class RollCallSystem {
 
                 this.showNotification(`✅ 成功导入 ${this.students.length} 名学生`, 'success');
                 console.log('🎉 CSV导入完成');
+                this.updateDebugInfo(`✅ 成功导入 ${this.students.length} 名学生`);
 
             } catch (error) {
                 console.error('❌ CSV导入过程中出现错误:', error);
