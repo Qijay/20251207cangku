@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>酷炫地球点名签到系统</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 3D地球容器 -->
+        <div class="earth-container">
+            <div class="earth">
+                <div class="earth-surface">
+                    <div class="continent"></div>
+                    <div class="continent"></div>
+                    <div class="continent"></div>
+                </div>
+                <div class="clouds"></div>
+            </div>
+        </div>
+
+        <!-- 点名结果显示区域 -->
+        <div class="result-display" id="resultDisplay">
+            <div class="name-plate" id="namePlate">
+                <div class="name-text" id="selectedName">准备点名...</div>
+                <div class="status-badge" id="statusBadge"></div>
+            </div>
+        </div>
+
+        <!-- 控制面板 -->
+        <div class="control-panel">
+            <div class="section">
+                <h3>📋 名单管理</h3>
+                <div class="file-upload">
+                    <input type="file" id="csvFile" accept=".csv" />
+                    <label for="csvFile" class="upload-btn">
+                        📤 导入CSV名单
+                    </label>
+                </div>
+                <div class="student-count">
+                    当前人数：<span id="studentCount">0</span>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>🎯 点名控制</h3>
+                <div class="roll-controls">
+                    <button id="startRoll" class="btn btn-primary">
+                        🌍 开始点名
+                    </button>
+                    <button id="markPresent" class="btn btn-success" disabled>
+                        ✅ 签到
+                    </button>
+                    <button id="markLate" class="btn btn-warning" disabled>
+                        ⏰ 迟到
+                    </button>
+                    <button id="markAbsent" class="btn btn-danger" disabled>
+                        ❌ 缺席
+                    </button>
+                </div>
+                <div class="navigation-controls">
+                    <button id="previousRoll" class="btn btn-secondary" disabled>
+                        👈 上一位
+                    </button>
+                    <button id="nextRoll" class="btn btn-info" disabled>
+                        👉 下一位
+                    </button>
+                    <button id="autoRoll" class="btn btn-primary" disabled>
+                        🤖 自动点名
+                    </button>
+                </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>📊 数据管理</h3>
+                <div class="data-controls">
+                    <div class="date-filter">
+                        <label for="startDate">开始日期：</label>
+                        <input type="date" id="startDate" />
+                        <label for="endDate">结束日期：</label>
+                        <input type="date" id="endDate" />
+                    </div>
+                    <button id="exportData" class="btn btn-info">
+                        📥 导出记录
+                    </button>
+                    <button id="clearRecords" class="btn btn-secondary">
+                        🗑️ 清空记录
+                    </button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>📈 统计信息</h3>
+                <div class="statistics">
+                    <div class="stat-item">
+                        <span class="stat-label">总点名次数：</span>
+                        <span class="stat-value" id="totalRolls">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">签到率：</span>
+                        <span class="stat-value" id="attendanceRate">0%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">迟到率：</span>
+                        <span class="stat-value" id="lateRate">0%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 记录列表 -->
+        <div class="records-panel">
+            <h3>📝 最近记录</h3>
+            <div class="records-list" id="recordsList">
+                <div class="no-records">暂无记录</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
